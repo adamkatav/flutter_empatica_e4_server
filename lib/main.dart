@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
 import 'package:empatica_e4link/empatica.dart';
-
+import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:dartzmq/dartzmq.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +18,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   EmpaticaPlugin deviceManager = EmpaticaPlugin();
-
+  final ZContext _context = ZContext();
+  late ZSocket socket;
   String _bvp = '';
   String _gsr = '';
   String _ibi = '';
@@ -33,9 +34,10 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    socket = _context.createSocket(SocketType.pub);
+    socket.bind("tcp://*:5050");
     super.initState();
     Permission.locationWhenInUse.request();
-
     _listenToStatus();
   }
 
@@ -135,6 +137,21 @@ class _MyAppState extends State<MyApp> {
           });
           break;
       }
+      Map<String, String> msg = {
+        'bvp': _bvp,
+        'gsr': _gsr,
+        'ibi': _ibi,
+        'battery': _battery,
+        'temperature': _temperature,
+        'x': '$_x',
+        'y': '$_y',
+        'z': '$_z',
+        'tag': _tag,
+        'SensorStatus': '$_sensorStatus',
+        'OnWristStatus': '$_onWristStatus',
+        'timestamp': '${DateTime.now().microsecondsSinceEpoch / 1000}'
+      };
+      socket.sendString(json.encode(msg));
     });
   }
 
@@ -146,9 +163,8 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Empatica example app'),
         ),
         body: Center(
-          child: Text(
-              'Status: ${deviceManager.status}\nBVP: $_bvp\nGSR: $_gsr\nIBI: $_ibi\nBattery: $_battery\nTemperature: $_temperature\nX: $_x\nY: $_y\nZ: $_z\nTag: $_tag\nSensorStatus: $_sensorStatus\nOnWristStatus: $_onWristStatus'),
-        ),
+            child: Text(
+                'Status: ${deviceManager.status}\nBVP: $_bvp\nGSR: $_gsr\nIBI: $_ibi\nBattery: $_battery\nTemperature: $_temperature\nX: $_x\nY: $_y\nZ: $_z\nTag: $_tag\nSensorStatus: $_sensorStatus\nOnWristStatus: $_onWristStatus')),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             deviceManager.status == EmpaStatus.connected

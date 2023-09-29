@@ -39,6 +39,7 @@ dependencies:
   logging: ^1.2.0
   flutter_background: ^1.2.0
   empatica_e4link: ^0.1.0+1
+  dartzmq: ^1.0.0-dev.15
 
 dev_dependencies:
   flutter_test:
