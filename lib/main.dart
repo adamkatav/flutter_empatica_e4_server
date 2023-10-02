@@ -90,22 +90,29 @@ class _MyAppState extends State<MyApp> {
 
   void _listenToData() {
     deviceManager.dataEventSink?.listen((event) {
+      Map<String, String>? msg;
+      String topic = '';
       switch (event.runtimeType) {
         // update each data point with the appropriate data
         case ReceiveBVP:
           setState(() {
             _bvp = (event as ReceiveBVP).bvp.toString();
           });
+          // msg = {'bvp': _bvp};
           break;
         case ReceiveGSR:
           setState(() {
             _gsr = (event as ReceiveGSR).gsr.toString();
           });
+          topic = 'eda';
+          msg = {topic: _gsr};
           break;
         case ReceiveIBI:
           setState(() {
             _ibi = (event as ReceiveIBI).ibi.toString();
           });
+          topic = 'ibi';
+          msg = {topic: _ibi};
           break;
         case ReceieveBatteryLevel:
           setState(() {
@@ -124,12 +131,16 @@ class _MyAppState extends State<MyApp> {
             _y = event.y;
             _z = event.z;
           });
+          topic = 'acc';
+          msg = {'x': '$_x', 'y': '$_y', 'z': '$_z'};
           break;
         case ReceiveTag:
           //just a timestamp as a double in unix time
           setState(() {
             _tag = (event as ReceiveTag).timestamp.toString();
           });
+          topic = 'tag';
+          msg = {'tag': _tag};
           break;
         case UpdateOnWristStatus:
           setState(() {
@@ -137,21 +148,9 @@ class _MyAppState extends State<MyApp> {
           });
           break;
       }
-      Map<String, String> msg = {
-        'bvp': _bvp,
-        'gsr': _gsr,
-        'ibi': _ibi,
-        'battery': _battery,
-        'temperature': _temperature,
-        'x': '$_x',
-        'y': '$_y',
-        'z': '$_z',
-        'tag': _tag,
-        'SensorStatus': '$_sensorStatus',
-        'OnWristStatus': '$_onWristStatus',
-        'timestamp': '${DateTime.now().microsecondsSinceEpoch / 1000}'
-      };
-      socket.sendString(json.encode(msg));
+      if (msg != null) {
+        socket.sendString("$topic ${json.encode(msg)}");
+      }
     });
   }
 
